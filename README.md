@@ -1,140 +1,114 @@
 # 🎵 RandomSong
 
-A minimal web app that serves you a random Spotify track with one click — no login required.
-
-![RandomSong screenshot](https://via.placeholder.com/700x400?text=RandomSong+Preview)
+A Spotify-powered music discovery engine that builds its own song database and serves fast random music recommendations.
 
 ---
 
-## Features
+## 🚀 What this actually is
 
-- 🎲 Random song on every click (letter, genre, or year-based search)
-- 🖼 Album cover, song name, artist, release year
-- ▶ 30-second audio preview (when available)
-- 🔗 "Open in Spotify" deep link
-- ⚡ No user login — uses Spotify Client Credentials Flow
+RandomSong is not just a frontend player — it is a hybrid system:
 
----
-
-## Prerequisites
-
-- [Node.js](https://nodejs.org/) v18 or later
-- A free [Spotify Developer account](https://developer.spotify.com)
+- 🧠 A crawler that collects songs from YouTube via API
+- 🗄 A local SQLite database (11k+ tracks and growing)
+- 🎯 A keyword-driven harvesting system
+- ⚡ A fast random song delivery backend
+- 🔗 Spotify integration for playback links
 
 ---
 
-## 1 · Get your Spotify credentials
+## ⚙️ Features
 
-1. Go to [developer.spotify.com/dashboard](https://developer.spotify.com/dashboard)
-2. Log in and click **Create app**
-3. Fill in:
-   - **App name**: RandomSong (or anything)
-   - **Redirect URI**: `http://localhost:3000` (required but unused)
-4. Click **Save**, then open the app and click **Settings**
-5. Copy the **Client ID** and **Client Secret**
+- 🎲 Instant random song generation
+- 📦 Local SQLite song database (no external dependency at runtime)
+- 🔍 Smart keyword-based crawler system
+- ⏱ Rate-limit aware YouTube API handling
+- 🎧 Spotify deep links for playback
+- 🧹 Duplicate filtering using video_id
+- ⛔ Duration filtering (removes long videos > 7 min)
 
 ---
 
-## 2 · Local setup
+## 🧠 How it works
+
+1. Crawler uses a fixed keyword list (music genres, artists, trends)
+2. YouTube API returns videos for each keyword
+3. Songs are filtered:
+   - duplicates removed
+   - duration checked
+   - title cleaned
+4. Stored in SQLite database
+5. Frontend pulls random rows for instant playback
+
+---
+
+## 🗃 Database
+
+SQLite schema stores:
+
+- video_id (unique)
+- title
+- artist (best-effort extraction)
+- uploader
+- duration
+- song_key
+- created_at
+
+---
+
+## 🧰 Setup
 
 ```bash
-# Clone / download the project
-git clone https://github.com/you/randomsong.git
-cd randomsong
-
-# Install dependencies
 npm install
-
-# Create your .env file
-cp .env.example .env
 ```
 
-Open `.env` and paste your credentials:
-
-```
-SPOTIFY_CLIENT_ID=abc123...
-SPOTIFY_CLIENT_SECRET=xyz789...
-PORT=3000
-```
-
-Start the dev server:
+Create database:
 
 ```bash
-npm run dev
+sqlite3 songs.db < schema.sql
 ```
 
-Open [http://localhost:3000](http://localhost:3000) 🎉
-
----
-
-## 3 · Deploy to Vercel (free)
-
-### Option A — Vercel CLI
+Run crawler:
 
 ```bash
-npm i -g vercel
-vercel
+node crawler.js
 ```
 
-Follow the prompts, then add your env vars:
+Run server:
 
 ```bash
-vercel env add SPOTIFY_CLIENT_ID
-vercel env add SPOTIFY_CLIENT_SECRET
-vercel --prod
-```
-
-### Option B — Vercel Dashboard
-
-1. Push your code to GitHub
-2. Go to [vercel.com](https://vercel.com) → **New Project** → import your repo
-3. In **Environment Variables**, add `SPOTIFY_CLIENT_ID` and `SPOTIFY_CLIENT_SECRET`
-4. Click **Deploy**
-
----
-
-## Project structure
-
-```
-randomsong/
-├── server.js          # Express server + Spotify API logic
-├── public/
-│   └── index.html     # Single-page frontend (HTML + CSS + JS)
-├── .env.example       # Environment variable template
-├── .gitignore
-├── package.json
-├── vercel.json        # Vercel deployment config
-└── README.md
+node server.js
 ```
 
 ---
 
-## How the randomisation works
+## 📦 Tech stack
 
-The Spotify Search API requires a query string (no "random" endpoint exists).  
-RandomSong uses three strategies, picked at random each request:
-
-| Strategy | Example query |
-|----------|--------------|
-| Random letter | `q=k` |
-| Random genre | `q=jazz` |
-| Random year  | `q=year:1987` |
-
-It also picks a random `offset` (0–499) so even the same query returns different results.
+- Node.js
+- SQLite
+- YouTube Data API
+- Spotify links (no playback API dependency)
+- Vanilla frontend
 
 ---
 
-## Troubleshooting
+## ⚠️ Notes
 
-| Issue | Fix |
-|-------|-----|
-| `Missing SPOTIFY_CLIENT_ID` | Check your `.env` file exists and has the correct keys |
-| `Spotify auth failed 401` | Double-check Client ID / Secret are correct |
-| No album cover | Some older tracks have no artwork — the app shows a placeholder |
-| No preview available | Spotify restricts previews in some regions; "No preview" label will show |
+- YouTube API quota is limited (crawler runs in batches)
+- Data quality improves over time as DB grows
+- Some metadata (artist name) is inferred and not always accurate
+- System is designed to evolve, not be perfect at start
 
 ---
 
-## License
+## 📈 Current status
+
+- ~11,000+ songs collected
+- Keyword-driven crawler active
+- Deduplication + filtering system in place
+- Moving toward production deployment
+
+---
+
+## 📄 License
 
 MIT
