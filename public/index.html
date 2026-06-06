@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RandomSong</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0d0d0d;
+      --surface:   #161616;
+      --border:    #272727;
+      --accent:    #1db954;
+      --accent2:   #ff4d4d;
+      --text:      #f0ede8;
+      --muted:     #666;
+      --card-w:    340px;
+    }
+
+    html, body {
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 300;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+      background-size: 180px;
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.5;
+    }
+
+    /* ── Outer shell: sidebar ads + center content ─────────────────── */
+    .shell {
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 160px 1fr 160px;
+      gap: 0;
+    }
+
+    /* ── Sidebar ad slots ──────────────────────────────────────────── */
+    .ad-sidebar {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding-top: 120px; /* align with content visually */
+    }
+
+    /* ── Center column ─────────────────────────────────────────────── */
+    .page {
+      min-height: 100vh;
+      display: grid;
+      grid-template-rows: auto auto 1fr auto;
+      padding: 0 24px;
+    }
+
+    /* ── Top banner ad slot ────────────────────────────────────────── */
+    .ad-banner {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 12px 0 4px;
+    }
+
+    /* ── Generic ad slot styling ───────────────────────────────────── */
+    .ad-slot {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--muted);
+      font-size: 0.65rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+
+    .ad-slot-skyscraper {
+      width: 120px;
+      height: 600px;
+    }
+
+    .ad-slot-banner {
+      width: 728px;
+      max-width: 100%;
+      height: 90px;
+    }
+
+    /* ── Header ────────────────────────────────────────────────────── */
+    header {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      padding: 40px 0 8px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .logo {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(2.4rem, 6vw, 3.6rem);
+      letter-spacing: 0.04em;
+      color: var(--text);
+      line-height: 1;
+    }
+
+    .logo span { color: var(--accent); }
+
+    .tagline {
+      font-size: 0.78rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 3px;
+    }
+
+    /* ── Main content ──────────────────────────────────────────────── */
+    main {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 48px;
+      padding: 48px 0;
+    }
+
+    .btn-shuffle {
+      position: relative;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.5rem;
+      letter-spacing: 0.1em;
+      padding: 18px 52px;
+      background: transparent;
+      color: var(--text);
+      border: 2px solid var(--text);
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s, border-color 0.15s, transform 0.1s;
+      outline: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .btn-shuffle::after {
+      content: '';
+      position: absolute;
+      inset: 4px;
+      border: 1px solid var(--accent);
+      opacity: 0;
+      transition: opacity 0.15s;
+    }
+
+    .btn-shuffle:hover {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #000;
+      transform: translateY(-2px);
+    }
+
+    .btn-shuffle:hover::after { opacity: 1; }
+    .btn-shuffle:active { transform: translateY(0px); }
+    .btn-shuffle:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+    .spinner {
+      display: none;
+      width: 36px;
+      height: 36px;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .card {
+      width: var(--card-w);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      display: none;
+      flex-direction: column;
+      animation: cardIn 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+
+    @keyframes cardIn {
+      from { opacity: 0; transform: translateY(18px) scale(0.97); }
+      to   { opacity: 1; transform: translateY(0)    scale(1); }
+    }
+
+    .card-cover-wrap {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 1;
+      overflow: hidden;
+      background: #111;
+    }
+
+    .card-cover {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      transition: transform 0.5s ease;
+    }
+
+    .card:hover .card-cover { transform: scale(1.03); }
+
+    .popularity-bar {
+      position: absolute;
+      bottom: 0; left: 0;
+      height: 3px;
+      background: var(--accent);
+      transition: width 0.6s ease 0.2s;
+    }
+
+    .year-badge {
+      position: absolute;
+      top: 12px; right: 12px;
+      background: rgba(0,0,0,0.72);
+      border: 1px solid var(--border);
+      padding: 3px 8px;
+      font-size: 0.7rem;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+
+    .card-body {
+      padding: 20px 22px 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .card-album {
+      font-size: 0.7rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .card-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.65rem;
+      line-height: 1.1;
+      letter-spacing: 0.03em;
+      margin-top: 2px;
+      word-break: break-word;
+    }
+
+    .card-artist {
+      font-size: 0.88rem;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .card-divider {
+      height: 1px;
+      background: var(--border);
+      margin: 16px 0 14px;
+    }
+
+    .card-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .preview-btn {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text);
+      cursor: pointer;
+      padding: 7px 13px;
+      font-size: 0.72rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      transition: border-color 0.15s, color 0.15s;
+      white-space: nowrap;
+    }
+
+    .preview-btn:hover { border-color: var(--text); }
+    .preview-btn.playing { border-color: var(--accent); color: var(--accent); }
+    .preview-btn.no-preview { opacity: 0.35; cursor: default; }
+
+    .spotify-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 0.78rem;
+      letter-spacing: 0.06em;
+      color: var(--accent);
+      text-decoration: none;
+      transition: opacity 0.15s;
+    }
+    .spotify-link:hover { opacity: 0.75; }
+    .spotify-icon { width: 18px; height: 18px; flex-shrink: 0; }
+
+    .error-msg {
+      display: none;
+      background: #1a0000;
+      border: 1px solid #4d0000;
+      color: #ff6b6b;
+      padding: 14px 20px;
+      font-size: 0.84rem;
+      width: var(--card-w);
+      text-align: center;
+      animation: cardIn 0.25s ease both;
+    }
+
+    footer {
+      padding: 20px 0 28px;
+      border-top: 1px solid var(--border);
+      font-size: 0.7rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      text-align: center;
+    }
+    footer a { color: var(--muted); text-decoration: none; }
+    footer a:hover { color: var(--text); }
+
+    /* ── Responsive: hide sidebars below 1100px ────────────────────── */
+    @media (max-width: 1100px) {
+      .shell {
+        grid-template-columns: 1fr;
+      }
+      .ad-sidebar { display: none; }
+      .ad-slot-banner { width: 320px; height: 50px; } /* mobile banner */
+    }
+
+    @media (max-width: 400px) {
+      :root { --card-w: 100%; }
+      .btn-shuffle { width: 100%; }
+      .ad-banner { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+
+    <!-- LEFT SIDEBAR AD -->
+    <aside class="ad-sidebar">
+      <!--
+        ADSENSE SKYSCRAPER — replace the div below with your AdSense unit:
+        <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX" crossorigin="anonymous"></script>
+        <ins class="adsbygoogle" style="display:inline-block;width:120px;height:600px" data-ad-client="ca-pub-XXXXXXXXXXXXXXXX" data-ad-slot="XXXXXXXXXX"></ins>
+        <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+      -->
+      <div class="ad-slot ad-slot-skyscraper">Ad</div>
+    </aside>
+
+    <!-- CENTER CONTENT -->
+    <div class="page">
+      <header>
+        <h1 class="logo">Random<span>Song</span></h1>
+        <p class="tagline">Spotify &bull; Discover anything</p>
+      </header>
+
+      <!-- TOP BANNER AD -->
+      <div class="ad-banner">
+        <!--
+          ADSENSE LEADERBOARD — replace the div below with your AdSense unit:
+          <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX" crossorigin="anonymous"></script>
+          <ins class="adsbygoogle" style="display:inline-block;width:728px;height:90px" data-ad-client="ca-pub-XXXXXXXXXXXXXXXX" data-ad-slot="XXXXXXXXXX"></ins>
+          <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+        -->
+        <div class="ad-slot ad-slot-banner">Ad</div>
+      </div>
+
+      <main>
+        <button class="btn-shuffle" id="shuffleBtn">
+          &#9654;&nbsp;&nbsp;Give me a random song
+        </button>
+
+        <div class="spinner" id="spinner"></div>
+
+        <article class="card" id="card">
+          <div class="card-cover-wrap">
+            <img class="card-cover" id="albumCover" src="" alt="Album cover" />
+            <div class="popularity-bar" id="popularityBar"></div>
+            <div class="year-badge" id="yearBadge"></div>
+          </div>
+          <div class="card-body">
+            <p class="card-album" id="albumName"></p>
+            <h2 class="card-title" id="songName"></h2>
+            <p class="card-artist" id="artistName"></p>
+            <div class="card-divider"></div>
+            <div class="card-footer">
+              <button class="preview-btn" id="previewBtn">&#9654; Preview</button>
+              <a class="spotify-link" id="spotifyLink" href="#" target="_blank" rel="noopener">
+                <svg class="spotify-icon" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.517 17.276a.748.748 0 0 1-1.03.249c-2.82-1.723-6.369-2.112-10.547-1.157a.748.748 0 1 1-.334-1.458c4.572-1.045 8.492-.595 11.663 1.336a.75.75 0 0 1 .248 1.03zm1.47-3.27a.937.937 0 0 1-1.288.308c-3.225-1.982-8.143-2.555-11.962-1.398a.937.937 0 0 1-.577-1.788c4.36-1.404 9.782-.723 13.52 1.59a.937.937 0 0 1 .307 1.289zm.126-3.404c-3.87-2.298-10.252-2.51-13.942-1.389a1.122 1.122 0 0 1-.651-2.147c4.242-1.288 11.296-1.039 15.75 1.606a1.122 1.122 0 1 1-1.157 1.93z"/>
+                </svg>
+                Open in Spotify
+              </a>
+            </div>
+          </div>
+        </article>
+
+        <p class="error-msg" id="errorMsg"></p>
+      </main>
+
+      <footer>
+        <p>Powered by <a href="https://developer.spotify.com" target="_blank" rel="noopener">Spotify Web API</a> &mdash; No login required</p>
+      </footer>
+    </div>
+
+    <!-- RIGHT SIDEBAR AD -->
+    <aside class="ad-sidebar">
+      <!--
+        ADSENSE SKYSCRAPER — replace the div below with your AdSense unit:
+        <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX" crossorigin="anonymous"></script>
+        <ins class="adsbygoogle" style="display:inline-block;width:120px;height:600px" data-ad-client="ca-pub-XXXXXXXXXXXXXXXX" data-ad-slot="XXXXXXXXXX"></ins>
+        <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+      -->
+      <div class="ad-slot ad-slot-skyscraper">Ad</div>
+    </aside>
+
+  </div>
+
+  <audio id="previewAudio"></audio>
+
+  <script>
+    const shuffleBtn    = document.getElementById('shuffleBtn');
+    const spinner       = document.getElementById('spinner');
+    const card          = document.getElementById('card');
+    const errorMsg      = document.getElementById('errorMsg');
+    const albumCover    = document.getElementById('albumCover');
+    const albumName     = document.getElementById('albumName');
+    const songName      = document.getElementById('songName');
+    const artistName    = document.getElementById('artistName');
+    const spotifyLink   = document.getElementById('spotifyLink');
+    const previewBtn    = document.getElementById('previewBtn');
+    const popularityBar = document.getElementById('popularityBar');
+    const yearBadge     = document.getElementById('yearBadge');
+    const audio         = document.getElementById('previewAudio');
+
+    let isPlaying = false;
+
+    function setLoading(on) {
+      shuffleBtn.disabled      = on;
+      spinner.style.display    = on ? 'block' : 'none';
+      if (on) {
+        card.style.display     = 'none';
+        errorMsg.style.display = 'none';
+        stopPreview();
+      }
+    }
+
+    function showError(msg) {
+      errorMsg.textContent   = '⚠ ' + msg;
+      errorMsg.style.display = 'block';
+      card.style.display     = 'none';
+    }
+
+    function showCard(song) {
+      albumCover.src         = song.albumCover;
+      albumCover.alt         = `${song.album} cover`;
+      albumName.textContent  = song.album;
+      songName.textContent   = song.name;
+      artistName.textContent = song.artist;
+      spotifyLink.href       = song.spotifyUrl;
+      yearBadge.textContent  = song.releaseYear;
+      popularityBar.style.width = '0%';
+
+      if (song.previewUrl) {
+        previewBtn.textContent = '▶ Preview';
+        previewBtn.classList.remove('no-preview', 'playing');
+        audio.src = song.previewUrl;
+        previewBtn.onclick = togglePreview;
+      } else {
+        previewBtn.textContent = 'No preview';
+        previewBtn.classList.add('no-preview');
+        previewBtn.classList.remove('playing');
+        previewBtn.onclick = null;
+      }
+
+      card.style.display     = 'flex';
+      errorMsg.style.display = 'none';
+
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          popularityBar.style.width = song.popularity + '%';
+        });
+      });
+    }
+
+    async function fetchRandomSong() {
+      setLoading(true);
+      try {
+        const res  = await fetch('/api/random-song');
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Something went wrong');
+        showCard(data);
+      } catch (err) {
+        showError(err.message || 'Could not fetch a song. Try again.');
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    function stopPreview() {
+      audio.pause();
+      audio.currentTime = 0;
+      isPlaying = false;
+      previewBtn.classList.remove('playing');
+      if (!previewBtn.classList.contains('no-preview'))
+        previewBtn.textContent = '▶ Preview';
+    }
+
+    function togglePreview() {
+      if (isPlaying) {
+        stopPreview();
+      } else {
+        audio.play();
+        isPlaying = true;
+        previewBtn.classList.add('playing');
+        previewBtn.textContent = '■ Stop';
+      }
+    }
+
+    audio.addEventListener('ended', () => {
+      isPlaying = false;
+      previewBtn.classList.remove('playing');
+      previewBtn.textContent = '▶ Preview';
+    });
+
+    shuffleBtn.addEventListener('click', fetchRandomSong);
+    fetchRandomSong();
+  </script>
+</body>
+</html>
